@@ -59,6 +59,7 @@ void STIMER_Tasks(void)
                 STIMER_Remove(timer);
             }
         }
+        timer = timer->next;
     }
 }
 
@@ -92,6 +93,7 @@ bool STIMER_Create(STIMER_HANDLE* _handle, STIMER_MODE _mode, uint32_t _delays_m
     _handle->mode = _mode;
     _handle->tmr_need = _delays_ms / (timerData.callbackTime/1000);
     _handle->tmr_cnt = _handle->tmr_need;
+    _handle->next = NULL;
     
     // Add it to the list
     STIMER_HANDLE* timer = timerData.timerList;
@@ -100,12 +102,11 @@ bool STIMER_Create(STIMER_HANDLE* _handle, STIMER_MODE _mode, uint32_t _delays_m
     if(timer == NULL)
         timerData.timerList = _handle;
     
-    // Else find last place
+    // Else insert at first position (data position isnt important)
     else
     {
-        while(timer->next != NULL)
-            timer = timer->next;
-        timer->next = _handle;
+        _handle->next = timerData.timerList;
+        timerData.timerList = _handle;
     }
     
     return true;
@@ -127,6 +128,13 @@ bool STIMER_Remove(STIMER_HANDLE* _handle)
         return false;
     }
     
+    // if is the first one
+    else if(timer == _handle)
+    {
+        timerData.timerList = _handle->next;
+        return true;
+    }
+    
     // Else find timer
     else
     {
@@ -136,12 +144,10 @@ bool STIMER_Remove(STIMER_HANDLE* _handle)
         // if we found id
         if(timer->next != NULL)
         {
-            // if last timer of the list
-            if(_handle->next == NULL)
-                timer->next = NULL;
-            else
-                timer->next = _handle->next;
+            timer->next = _handle->next;
+            return true;
         }
-        return true;        
+        else
+            return false;
     }
 }
